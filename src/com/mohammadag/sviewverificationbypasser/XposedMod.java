@@ -1,16 +1,18 @@
 package com.mohammadag.sviewverificationbypasser;
 
+import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
+import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 import static de.robv.android.xposed.XposedHelpers.findClass;
 import static de.robv.android.xposed.XposedHelpers.setBooleanField;;
 
-public class XposedMod implements IXposedHookZygoteInit {
+public class XposedMod implements IXposedHookZygoteInit, IXposedHookLoadPackage {
 
 	@Override
 	public void initZygote(StartupParam startupParam) throws Throwable {
@@ -47,4 +49,15 @@ public class XposedMod implements IXposedHookZygoteInit {
 		});
 	}
 
+	@Override
+	public void handleLoadPackage(LoadPackageParam lpparam) throws Throwable {
+		if (!lpparam.packageName.equals("com.android.settings"))
+			return;
+
+		/* Samsung, you have an API you made, use it! Consider firing some developers for keeping old code. */
+		Class<?> LockscreenMenuSettings =
+				findClass("com.android.settings.LockscreenMenuSettings", lpparam.classLoader);
+		findAndHookMethod(LockscreenMenuSettings, "isCoverVerified", XC_MethodReplacement.returnConstant(true));
+		findAndHookMethod(LockscreenMenuSettings, "getTypeOfCover", XC_MethodReplacement.returnConstant(1));
+	}
 }
